@@ -12,18 +12,19 @@ from langchain.callbacks import StreamlitCallbackHandler  # Import StreamlitCall
 # Load environment variables from the .env file
 load_dotenv()
 
-# Custom CSS to style the neon shadow effect around the title
+# Custom CSS to style the neon shadow effect around the entire app container
 st.markdown("""
     <style>
-        /* Neon shadow effect around the main container */
-        .neon-box {
+        .neon-container {
             padding: 20px;
             border-radius: 15px;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 0 0 20px rgba(0, 255, 0, 0.6), 0 0 30px rgba(0, 255, 0, 0.4);
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 
+                        0 0 20px rgba(0, 255, 0, 0.6), 
+                        0 0 30px rgba(0, 255, 0, 0.4);
             background-color: #0f0f0f; /* Dark background to highlight the neon effect */
             margin: 20px;
         }
-        
+
         .main-title {
             color: #39FF14;  /* Neon green color */
             font-size: 40px;
@@ -40,11 +41,12 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Add a container with the neon shadow effect for the title
-st.markdown('<div class="neon-box">', unsafe_allow_html=True)
+# Wrap the entire app inside the neon container
+st.markdown('<div class="neon-container">', unsafe_allow_html=True)
+
+# Title and subheader inside the neon box
 st.markdown('<h1 class="main-title">👽SkyMath</h1>', unsafe_allow_html=True)
 st.markdown('<h4 class="subheader">Your problem solver assistant Google Gemma 2</h4>', unsafe_allow_html=True)
-st.markdown('</div>', unsafe_allow_html=True)  # Close the neon box container
 
 # Load Groq API key from environment variables
 groq_api_key = os.getenv("GROQ_API_KEY")
@@ -133,3 +135,6 @@ if st.button("Find my answer"):
 
     else:
         st.warning("Please enter the question")  # Show a warning if no question is entered
+
+# Close the neon container
+st.markdown('</div>', unsafe_allow_html=True)

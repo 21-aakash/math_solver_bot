@@ -9,58 +9,73 @@ from langchain.agents.agent_types import AgentType  # Import AgentType to specif
 from langchain.agents import Tool, initialize_agent  # Import Tool and initialize_agent to create and initialize tools
 from langchain.callbacks import StreamlitCallbackHandler  # Import StreamlitCallbackHandler to handle Streamlit callbacks
 
-# .env file se environment variables ko load karne ke liye
+# Load environment variables from the .env file
 load_dotenv()
 
-# Custom CSS to style the title and headings
+# Custom CSS to style the app container with neon border effect
 st.markdown("""
     <style>
-    .main-title {
-        color: #00FF00;  /* Bright orange-red */
-        font-size: 40px;
-        font-weight: bold;
-        text-align: center;
-    }
-    .subheader {
-        color: #98FB98;  /* Dodger blue */
-        font-size: 30px;
-        font-weight: bold;
-    }
+        .neon-container {
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 
+                        0 0 20px rgba(0, 255, 0, 0.6), 
+                        0 0 30px rgba(0, 255, 0, 0.4);
+            background-color: #0f0f0f; /* Dark background to highlight the neon effect */
+            margin: 20px;
+        }
+
+        .main-title {
+            color: #00FF00;  /* Neon green color */
+            font-size: 40px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .subheader {
+            color: #98FB98;  /* Light green color */
+            font-size: 30px;
+            font-weight: bold;
+            text-align: center;
+        }
     </style>
 """, unsafe_allow_html=True)
 
-# Streamlit app ki settings set karenge
+# Wrap the entire app inside the neon container
+st.markdown('<div class="neon-container">', unsafe_allow_html=True)
+
+# Title and subheader inside the neon box
 st.markdown('<h1 class="main-title">👽SkyMath</h1>', unsafe_allow_html=True)
 st.markdown('<h4 class="subheader">Your problem solver assistant Google Gemma 2</h4>', unsafe_allow_html=True)
 
-# Groq API key ko environment variables se load karenge
+# Load Groq API key from environment variables
 groq_api_key = os.getenv("GROQ_API_KEY")
 
-# Agar API key nahi mili, toh user ko message dikhayenge aur app stop karenge
+# If API key is not provided, show an info message and stop the app
 if not groq_api_key:
     st.info("Please add your Groq API key in the .env file to continue")
     st.stop()
 
-# ChatGroq model ko initialize karenge Groq API key ke sath
+# Initialize the ChatGroq model with the provided API key
 llm = ChatGroq(model="Gemma2-9b-It", groq_api_key=groq_api_key)
 
-# Wikipedia tool initialize karenge
+# Initialize the Wikipedia tool
 wikipedia_wrapper = WikipediaAPIWrapper()
 wikipedia_tool = Tool(
     name="Wikipedia",
-    func=wikipedia_wrapper.run,  # Wikipedia tool ke liye function set karenge
+    func=wikipedia_wrapper.run,  # Set the function for the Wikipedia tool
     description="A tool for searching the Internet to find various information on the topics mentioned"
 )
 
-# Math tool initialize karenge
+# Initialize the Math tool
 math_chain = LLMMathChain.from_llm(llm=llm)
 calculator = Tool(
     name="Calculator",
-    func=math_chain.run,  # Math tool ke liye function set karenge
+    func=math_chain.run,  # Set the function for the Calculator tool
     description="A tool for answering math-related questions. Only input mathematical expressions need to be provided"
 )
 
-# Custom prompt template banayenge reasoning questions ke liye
+# Create a custom prompt template for reasoning questions
 prompt = """
 You are an agent tasked with solving users' mathematical questions. Logically arrive at the solution and provide a detailed explanation,
 and display it point-wise for the question below.
@@ -69,54 +84,61 @@ Answer:
 """
 
 prompt_template = PromptTemplate(
-    input_variables=["question"],  # Prompt ke input variables define karenge
-    template=prompt  # Prompt ko template ke sath set karenge
+    input_variables=["question"],  # Define input variables for the prompt
+    template=prompt  # Set the prompt template
 )
 
-# Reasoning tool ke liye chain banayenge
+# Create a chain for the reasoning tool
 chain = LLMChain(llm=llm, prompt=prompt_template)
 
 reasoning_tool = Tool(
     name="Reasoning tool",
-    func=chain.run,  # Reasoning tool ke liye function set karenge
+    func=chain.run,  # Set the function for the Reasoning tool
     description="A tool for answering logic-based and reasoning questions."
 )
 
-# Sabhi tools ko agent ke andar combine karenge
+# Combine all tools into an agent
 assistant_agent = initialize_agent(
     tools=[wikipedia_tool, calculator, reasoning_tool],
     llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Agent type set karenge
-    verbose=False,  # Verbose logging off rakhenge
-    handle_parsing_errors=True  # Parsing errors ko handle karenge
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Set the agent type
+    verbose=False,  # Verbose logging off
+    handle_parsing_errors=True  # Handle parsing errors
 )
 
-# Session state initialize karenge agar messages pehle se nahi hain
+# Initialize session state if messages do not exist
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
         {"role": "assistant", "content": "Hi, I'm a SkyMath chatbot who can answer all your maths questions"}
     ]
 
-# Pichle messages ko display karenge
+# Display previous messages
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
-# Interaction start karne ke liye user se question lenge
-question = st.text_area("Enter your question:")
+# Get user input and start interaction
+question = st.text_area("Enter your question:", "")
 
-# Agar user "find my answer" button press kare, toh response generate karenge
+# Generate response when button is pressed
 if st.button("Find my answer"):
     if question:
-        with st.spinner("Generating response..."):  # Spinner dikhayenge jab tak response generate ho raha hai
+        with st.spinner("Generating response..."):  # Show a spinner while generating response
             st.session_state.messages.append({"role": "user", "content": question})
             st.chat_message("user").write(question)
 
-            # Response generate karenge agent se aur display karenge
-            st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
-            response = assistant_agent.run(st.session_state.messages, callbacks=[st_cb])
-            st.session_state.messages.append({'role': 'assistant', "content": response})
-            st.write('### Response:')
-            st.success(response)
+            try:
+                # Generate and display response from the agent
+                st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
+                response = assistant_agent.run(st.session_state.messages, callbacks=[st_cb])
+                st.session_state.messages.append({'role': 'assistant', "content": response})
+                st.write('### Response:')
+                st.success(response)
+
+            except Exception as e:
+                st.error(f"An error occurred: {e}")  # Display error if something goes wrong
 
     else:
-        st.warning("Please enter the question")  # Agar question nahi diya gaya toh warning dikhayenge
+        st.warning("Please enter the question")  # Show a warning if no question is entered
+
+# Close the neon container
+st.markdown('</div>', unsafe_allow_html=True)

@@ -16,13 +16,13 @@ load_dotenv()
 st.markdown("""
     <style>
     .main-title {
-        color: #FF5733;  /* Bright orange-red */
+        color: #00FF00;  /* Bright orange-red */
         font-size: 40px;
         font-weight: bold;
         text-align: center;
     }
     .subheader {
-        color: #1E90FF;  /* Dodger blue */
+        color: #98FB98;  /* Dodger blue */
         font-size: 30px;
         font-weight: bold;
     }

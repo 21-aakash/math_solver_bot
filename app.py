@@ -21,26 +21,7 @@ st.markdown("""
     font-weight: bold;
     text-align: center;
     cursor: pointer;
-    transition: transform 0.3s ease-in-out;
-}
-
-@keyframes jelly {
-    0%, 100% {
-        transform: scale(1, 1);
-    }
-    25% {
-        transform: scale(1.25, 0.75);
-    }
-    50% {
-        transform: scale(0.75, 1.25);
-    }
-    75% {
-        transform: scale(1.15, 0.85);
-    }
-}
-
-.animate-jelly {
-    animation: jelly 0.6s ease-in-out;
+    
 }
 
     .subheader {

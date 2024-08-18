@@ -9,73 +9,58 @@ from langchain.agents.agent_types import AgentType  # Import AgentType to specif
 from langchain.agents import Tool, initialize_agent  # Import Tool and initialize_agent to create and initialize tools
 from langchain.callbacks import StreamlitCallbackHandler  # Import StreamlitCallbackHandler to handle Streamlit callbacks
 
-# Load environment variables from the .env file
+# .env file se environment variables ko load karne ke liye
 load_dotenv()
 
-# Custom CSS to style the neon shadow effect around the entire app container
+# Custom CSS to style the title and headings
 st.markdown("""
     <style>
-        .neon-container {
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 0 10px rgba(0, 255, 0, 0.8), 
-                        0 0 20px rgba(0, 255, 0, 0.6), 
-                        0 0 30px rgba(0, 255, 0, 0.4);
-            background-color: #0f0f0f; /* Dark background to highlight the neon effect */
-            margin: 20px;
-        }
-
-        .main-title {
-            color: #39FF14;  /* Neon green color */
-            font-size: 40px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .subheader {
-            color: #D0F0C0;  /* Light green color */
-            font-size: 30px;
-            font-weight: bold;
-            text-align: center;
-        }
+    .main-title {
+        color: #FF5733;  /* Bright orange-red */
+        font-size: 40px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .subheader {
+        color: #1E90FF;  /* Dodger blue */
+        font-size: 30px;
+        font-weight: bold;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Wrap the entire app inside the neon container
-st.markdown('<div class="neon-container">', unsafe_allow_html=True)
+# Streamlit app ki settings set karenge
+st.markdown('<h1 class="main-title">Text To Math Problem Solver And Data Search Assistant</h1>', unsafe_allow_html=True)
+st.markdown('<h2 class="subheader">Text To Math Problem Solver Using Google Gemma 2</h2>', unsafe_allow_html=True)
 
-# Title and subheader inside the neon box
-st.markdown('<h1 class="main-title">👽SkyMath</h1>', unsafe_allow_html=True)
-st.markdown('<h4 class="subheader">Your problem solver assistant Google Gemma 2</h4>', unsafe_allow_html=True)
-
-# Load Groq API key from environment variables
+# Groq API key ko environment variables se load karenge
 groq_api_key = os.getenv("GROQ_API_KEY")
 
-# If API key is not provided, show an info message and stop the app
+# Agar API key nahi mili, toh user ko message dikhayenge aur app stop karenge
 if not groq_api_key:
     st.info("Please add your Groq API key in the .env file to continue")
     st.stop()
 
-# Initialize the ChatGroq model with the provided API key
+# ChatGroq model ko initialize karenge Groq API key ke sath
 llm = ChatGroq(model="Gemma2-9b-It", groq_api_key=groq_api_key)
 
-# Initialize the Wikipedia tool
+# Wikipedia tool initialize karenge
 wikipedia_wrapper = WikipediaAPIWrapper()
 wikipedia_tool = Tool(
     name="Wikipedia",
-    func=wikipedia_wrapper.run,  # Set the function for the Wikipedia tool
+    func=wikipedia_wrapper.run,  # Wikipedia tool ke liye function set karenge
     description="A tool for searching the Internet to find various information on the topics mentioned"
 )
 
-# Initialize the Math tool
+# Math tool initialize karenge
 math_chain = LLMMathChain.from_llm(llm=llm)
 calculator = Tool(
     name="Calculator",
-    func=math_chain.run,  # Set the function for the Calculator tool
+    func=math_chain.run,  # Math tool ke liye function set karenge
     description="A tool for answering math-related questions. Only input mathematical expressions need to be provided"
 )
 
-# Create a custom prompt template for reasoning questions
+# Custom prompt template banayenge reasoning questions ke liye
 prompt = """
 You are an agent tasked with solving users' mathematical questions. Logically arrive at the solution and provide a detailed explanation,
 and display it point-wise for the question below.
@@ -84,49 +69,49 @@ Answer:
 """
 
 prompt_template = PromptTemplate(
-    input_variables=["question"],  # Define input variables for the prompt
-    template=prompt  # Set the prompt template
+    input_variables=["question"],  # Prompt ke input variables define karenge
+    template=prompt  # Prompt ko template ke sath set karenge
 )
 
-# Create a chain for the reasoning tool
+# Reasoning tool ke liye chain banayenge
 chain = LLMChain(llm=llm, prompt=prompt_template)
 
 reasoning_tool = Tool(
     name="Reasoning tool",
-    func=chain.run,  # Set the function for the Reasoning tool
+    func=chain.run,  # Reasoning tool ke liye function set karenge
     description="A tool for answering logic-based and reasoning questions."
 )
 
-# Combine all tools into an agent
+# Sabhi tools ko agent ke andar combine karenge
 assistant_agent = initialize_agent(
     tools=[wikipedia_tool, calculator, reasoning_tool],
     llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Set the agent type
-    verbose=False,  # Disable verbose logging
-    handle_parsing_errors=True  # Handle parsing errors
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Agent type set karenge
+    verbose=False,  # Verbose logging off rakhenge
+    handle_parsing_errors=True  # Parsing errors ko handle karenge
 )
 
-# Initialize session state if messages do not exist
+# Session state initialize karenge agar messages pehle se nahi hain
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
         {"role": "assistant", "content": "Hi, I'm a Math chatbot who can answer all your maths questions"}
     ]
 
-# Display previous messages
+# Pichle messages ko display karenge
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
-# Get user input and start interaction
+# Interaction start karne ke liye user se question lenge
 question = st.text_area("Enter your question:", "I have 5 bananas and 7 grapes. I eat 2 bananas and give away 3 grapes. Then I buy a dozen apples and 2 packs of blueberries. Each pack of blueberries contains 25 berries. How many total pieces of fruit do I have at the end?")
 
-# Generate response when button is pressed
+# Agar user "find my answer" button press kare, toh response generate karenge
 if st.button("Find my answer"):
     if question:
-        with st.spinner("Generating response..."):  # Show a spinner while generating response
+        with st.spinner("Generating response..."):  # Spinner dikhayenge jab tak response generate ho raha hai
             st.session_state.messages.append({"role": "user", "content": question})
             st.chat_message("user").write(question)
 
-            # Generate and display response from the agent
+            # Response generate karenge agent se aur display karenge
             st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
             response = assistant_agent.run(st.session_state.messages, callbacks=[st_cb])
             st.session_state.messages.append({'role': 'assistant', "content": response})
@@ -134,7 +119,4 @@ if st.button("Find my answer"):
             st.success(response)
 
     else:
-        st.warning("Please enter the question")  # Show a warning if no question is entered
-
-# Close the neon container
-st.markdown('</div>', unsafe_allow_html=True)
+        st.warning("Please enter the question")  # Agar question nahi diya gaya toh warning dikhayenge

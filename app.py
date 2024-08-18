@@ -15,14 +15,12 @@ load_dotenv()
 # Custom CSS to style the title and headings
 st.markdown("""
     <style>
-   .main-title {
-    color: #FF4500;  /* Bright orange-red */
-    font-size: 40px;
-    font-weight: bold;
-    text-align: center;
-    cursor: pointer;
-    
-}
+ main-title {
+        color: #3FFF00;  /* Bright orange-red */
+        font-size: 40px;
+        font-weight: bold;
+        text-align: center;
+    }
 
     .subheader {
         color: #D0F0C0;  /* Dodger blue */

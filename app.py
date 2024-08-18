@@ -12,7 +12,7 @@ from langchain.callbacks import StreamlitCallbackHandler  # Import StreamlitCall
 # .env file se environment variables ko load karne ke liye
 load_dotenv()
 
-# Custom CSS to style the title and headings
+# Custom CSS to style the title, headings, and add a box around the app
 st.markdown("""
     <style>
     .main-title {
@@ -26,97 +26,112 @@ st.markdown("""
         font-size: 30px;
         font-weight: bold;
     }
+    .app-box {
+        border: 2px solid #1E90FF;  /* Border color: Dodger blue */
+        padding: 20px;
+        border-radius: 10px;
+        background-color: #f9f9f9;  /* Light grey background */
+        box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.1);  /* Subtle shadow for depth */
+        margin: 20px auto;
+        max-width: 80%;
+    }
     </style>
 """, unsafe_allow_html=True)
 
-# Streamlit app ki settings set karenge
-st.markdown('<h1 class="main-title"> 👽Text To Math Problem Solver And Data Search Assistant</h1>', unsafe_allow_html=True)
-st.markdown('<h2 class="subheader">Text To Math Problem Solver Using Google Gemma 2</h2>', unsafe_allow_html=True)
+# App content inside a box
+with st.markdown('<div class="app-box">', unsafe_allow_html=True):
 
-# Groq API key ko environment variables se load karenge
-groq_api_key = os.getenv("GROQ_API_KEY")
+    # Streamlit app ki settings set karenge
+    st.markdown('<h1 class="main-title">Text To Math Problem Solver And Data Search Assistant</h1>', unsafe_allow_html=True)
+    st.markdown('<h2 class="subheader">Text To Math Problem Solver Using Google Gemma 2</h2>', unsafe_allow_html=True)
 
-# Agar API key nahi mili, toh user ko message dikhayenge aur app stop karenge
-if not groq_api_key:
-    st.info("Please add your Groq API key in the .env file to continue")
-    st.stop()
+    # Groq API key ko environment variables se load karenge
+    groq_api_key = os.getenv("GROQ_API_KEY")
 
-# ChatGroq model ko initialize karenge Groq API key ke sath
-llm = ChatGroq(model="Gemma2-9b-It", groq_api_key=groq_api_key)
+    # Agar API key nahi mili, toh user ko message dikhayenge aur app stop karenge
+    if not groq_api_key:
+        st.info("Please add your Groq API key in the .env file to continue")
+        st.stop()
 
-# Wikipedia tool initialize karenge
-wikipedia_wrapper = WikipediaAPIWrapper()
-wikipedia_tool = Tool(
-    name="Wikipedia",
-    func=wikipedia_wrapper.run,  # Wikipedia tool ke liye function set karenge
-    description="A tool for searching the Internet to find various information on the topics mentioned"
-)
+    # ChatGroq model ko initialize karenge Groq API key ke sath
+    llm = ChatGroq(model="Gemma2-9b-It", groq_api_key=groq_api_key)
 
-# Math tool initialize karenge
-math_chain = LLMMathChain.from_llm(llm=llm)
-calculator = Tool(
-    name="Calculator",
-    func=math_chain.run,  # Math tool ke liye function set karenge
-    description="A tool for answering math-related questions. Only input mathematical expressions need to be provided"
-)
+    # Wikipedia tool initialize karenge
+    wikipedia_wrapper = WikipediaAPIWrapper()
+    wikipedia_tool = Tool(
+        name="Wikipedia",
+        func=wikipedia_wrapper.run,  # Wikipedia tool ke liye function set karenge
+        description="A tool for searching the Internet to find various information on the topics mentioned"
+    )
 
-# Custom prompt template banayenge reasoning questions ke liye
-prompt = """
-You are an agent tasked with solving users' mathematical questions. Logically arrive at the solution and provide a detailed explanation,
-and display it point-wise for the question below.
-Question: {question}
-Answer:
-"""
+    # Math tool initialize karenge
+    math_chain = LLMMathChain.from_llm(llm=llm)
+    calculator = Tool(
+        name="Calculator",
+        func=math_chain.run,  # Math tool ke liye function set karenge
+        description="A tool for answering math-related questions. Only input mathematical expressions need to be provided"
+    )
 
-prompt_template = PromptTemplate(
-    input_variables=["question"],  # Prompt ke input variables define karenge
-    template=prompt  # Prompt ko template ke sath set karenge
-)
+    # Custom prompt template banayenge reasoning questions ke liye
+    prompt = """
+    You are an agent tasked with solving users' mathematical questions. Logically arrive at the solution and provide a detailed explanation,
+    and display it point-wise for the question below.
+    Question: {question}
+    Answer:
+    """
 
-# Reasoning tool ke liye chain banayenge
-chain = LLMChain(llm=llm, prompt=prompt_template)
+    prompt_template = PromptTemplate(
+        input_variables=["question"],  # Prompt ke input variables define karenge
+        template=prompt  # Prompt ko template ke sath set karenge
+    )
 
-reasoning_tool = Tool(
-    name="Reasoning tool",
-    func=chain.run,  # Reasoning tool ke liye function set karenge
-    description="A tool for answering logic-based and reasoning questions."
-)
+    # Reasoning tool ke liye chain banayenge
+    chain = LLMChain(llm=llm, prompt=prompt_template)
 
-# Sabhi tools ko agent ke andar combine karenge
-assistant_agent = initialize_agent(
-    tools=[wikipedia_tool, calculator, reasoning_tool],
-    llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Agent type set karenge
-    verbose=False,  # Verbose logging off rakhenge
-    handle_parsing_errors=True  # Parsing errors ko handle karenge
-)
+    reasoning_tool = Tool(
+        name="Reasoning tool",
+        func=chain.run,  # Reasoning tool ke liye function set karenge
+        description="A tool for answering logic-based and reasoning questions."
+    )
 
-# Session state initialize karenge agar messages pehle se nahi hain
-if "messages" not in st.session_state:
-    st.session_state["messages"] = [
-        {"role": "assistant", "content": "Hi, I'm a Math chatbot who can answer all your maths questions"}
-    ]
+    # Sabhi tools ko agent ke andar combine karenge
+    assistant_agent = initialize_agent(
+        tools=[wikipedia_tool, calculator, reasoning_tool],
+        llm=llm,
+        agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Agent type set karenge
+        verbose=False,  # Verbose logging off rakhenge
+        handle_parsing_errors=True  # Parsing errors ko handle karenge
+    )
 
-# Pichle messages ko display karenge
-for msg in st.session_state.messages:
-    st.chat_message(msg["role"]).write(msg['content'])
+    # Session state initialize karenge agar messages pehle se nahi hain
+    if "messages" not in st.session_state:
+        st.session_state["messages"] = [
+            {"role": "assistant", "content": "Hi, I'm a Math chatbot who can answer all your maths questions"}
+        ]
 
-# Interaction start karne ke liye user se question lenge
-question = st.text_area("Enter your question:", "I have 5 bananas and 7 grapes. I eat 2 bananas and give away 3 grapes. Then I buy a dozen apples and 2 packs of blueberries. Each pack of blueberries contains 25 berries. How many total pieces of fruit do I have at the end?")
+    # Pichle messages ko display karenge
+    for msg in st.session_state.messages:
+        st.chat_message(msg["role"]).write(msg['content'])
 
-# Agar user "find my answer" button press kare, toh response generate karenge
-if st.button("Find my answer"):
-    if question:
-        with st.spinner("Generating response..."):  # Spinner dikhayenge jab tak response generate ho raha hai
-            st.session_state.messages.append({"role": "user", "content": question})
-            st.chat_message("user").write(question)
+    # Interaction start karne ke liye user se question lenge
+    question = st.text_area("Enter your question:", "I have 5 bananas and 7 grapes. I eat 2 bananas and give away 3 grapes. Then I buy a dozen apples and 2 packs of blueberries. Each pack of blueberries contains 25 berries. How many total pieces of fruit do I have at the end?")
 
-            # Response generate karenge agent se aur display karenge
-            st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
-            response = assistant_agent.run(st.session_state.messages, callbacks=[st_cb])
-            st.session_state.messages.append({'role': 'assistant', "content": response})
-            st.write('### Response:')
-            st.success(response)
+    # Agar user "find my answer" button press kare, toh response generate karenge
+    if st.button("Find my answer"):
+        if question:
+            with st.spinner("Generating response..."):  # Spinner dikhayenge jab tak response generate ho raha hai
+                st.session_state.messages.append({"role": "user", "content": question})
+                st.chat_message("user").write(question)
 
-    else:
-        st.warning("Please enter the question")  # Agar question nahi diya gaya toh warning dikhayenge
+                # Response generate karenge agent se aur display karenge
+                st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
+                response = assistant_agent.run(st.session_state.messages, callbacks=[st_cb])
+                st.session_state.messages.append({'role': 'assistant', "content": response})
+                st.write('### Response:')
+                st.success(response)
+
+        else:
+            st.warning("Please enter the question")  # Agar question nahi diya gaya toh warning dikhayenge
+
+# Close the app box div
+st.markdown('</div>', unsafe_allow_html=True)

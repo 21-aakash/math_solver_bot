@@ -94,7 +94,7 @@ assistant_agent = initialize_agent(
 # Session state initialize karenge agar messages pehle se nahi hain
 if "messages" not in st.session_state:
     st.session_state["messages"] = [
-        {"role": "assistant", "content": "Hi, I'm a Math chatbot who can answer all your maths questions"}
+        {"role": "assistant", "content": "Hi, I'm a SkyMath chatbot who can answer all your maths questions"}
     ]
 
 # Pichle messages ko display karenge

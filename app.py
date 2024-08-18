@@ -15,12 +15,34 @@ load_dotenv()
 # Custom CSS to style the title and headings
 st.markdown("""
     <style>
-    .main-title {
-        color: #3FFF00;  /* Bright orange-red */
-        font-size: 40px;
-        font-weight: bold;
-        text-align: center;
+   .main-title {
+    color: #FF4500;  /* Bright orange-red */
+    font-size: 40px;
+    font-weight: bold;
+    text-align: center;
+    cursor: pointer;
+    transition: transform 0.3s ease-in-out;
+}
+
+@keyframes jelly {
+    0%, 100% {
+        transform: scale(1, 1);
     }
+    25% {
+        transform: scale(1.25, 0.75);
+    }
+    50% {
+        transform: scale(0.75, 1.25);
+    }
+    75% {
+        transform: scale(1.15, 0.85);
+    }
+}
+
+.animate-jelly {
+    animation: jelly 0.6s ease-in-out;
+}
+
     .subheader {
         color: #D0F0C0;  /* Dodger blue */
         font-size: 30px;
@@ -30,7 +52,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Streamlit app ki settings set karenge
-st.markdown('<h1 class="main-title">👽SkyMath</h1>', unsafe_allow_html=True)
+st.markdown('<h1 onclick="animateTitle() class="main-title">👽SkyMath</h1>', unsafe_allow_html=True)
 st.markdown('<h4 class="subheader">Your problem solver assistant Google Gemma 2</h4>', unsafe_allow_html=True)
 
 # Groq API key ko environment variables se load karenge

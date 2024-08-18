@@ -30,8 +30,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # Streamlit app ki settings set karenge
-st.markdown('<h1 class="main-title">Text To Math Problem Solver And Data Search Assistant</h1>', unsafe_allow_html=True)
-st.markdown('<h2 class="subheader">Text To Math Problem Solver Using Google Gemma 2</h2>', unsafe_allow_html=True)
+st.markdown('<h1 class="main-title">👽SkyMath</h1>', unsafe_allow_html=True)
+st.markdown('<h4 class="subheader">Your problem solver assistant Google Gemma 2</h4>', unsafe_allow_html=True)
 
 # Groq API key ko environment variables se load karenge
 groq_api_key = os.getenv("GROQ_API_KEY")

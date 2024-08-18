@@ -102,7 +102,7 @@ for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
 # Interaction start karne ke liye user se question lenge
-question = st.text_area("Enter your question:", "I have 5 bananas and 7 grapes. I eat 2 bananas and give away 3 grapes. Then I buy a dozen apples and 2 packs of blueberries. Each pack of blueberries contains 25 berries. How many total pieces of fruit do I have at the end?")
+question = st.text_area("Enter your question:")
 
 # Agar user "find my answer" button press kare, toh response generate karenge
 if st.button("Find my answer"):

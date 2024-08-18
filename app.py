@@ -1,107 +1,122 @@
-import streamlit as st
-from langchain_groq import ChatGroq
-from langchain.chains import LLMMathChain, LLMChain
-from langchain.prompts import PromptTemplate
-from langchain_community.utilities import WikipediaAPIWrapper
-from langchain.agents.agent_types import AgentType
-from langchain.agents import Tool, initialize_agent
-from langchain.callbacks import StreamlitCallbackHandler
+import os  # Import os to interact with the operating system
+import streamlit as st  # Import Streamlit for building the web app
+from dotenv import load_dotenv  # Import dotenv to load environment variables
+from langchain_groq import ChatGroq  # Import ChatGroq for using Groq API with LangChain
+from langchain.chains import LLMMathChain, LLMChain  # Import LangChain modules for math and general chains
+from langchain.prompts import PromptTemplate  # Import PromptTemplate to create custom prompts
+from langchain_community.utilities import WikipediaAPIWrapper  # Import WikipediaAPIWrapper for Wikipedia integration
+from langchain.agents.agent_types import AgentType  # Import AgentType to specify the type of agent
+from langchain.agents import Tool, initialize_agent  # Import Tool and initialize_agent to create and initialize tools
+from langchain.callbacks import StreamlitCallbackHandler  # Import StreamlitCallbackHandler to handle Streamlit callbacks
 
-## Set upi the Stramlit app
-st.set_page_config(page_title="Text To MAth Problem Solver And Data Serach Assistant",page_icon="🧮")
-st.title("Text To Math Problem Solver Uing Google Gemma 2")
+# .env file se environment variables ko load karne ke liye
+load_dotenv()
 
-groq_api_key=st.sidebar.text_input(label="Groq API Key",type="password")
+# Custom CSS to style the title and headings
+st.markdown("""
+    <style>
+    .main-title {
+        color: #FF5733;  /* Bright orange-red */
+        font-size: 40px;
+        font-weight: bold;
+        text-align: center;
+    }
+    .subheader {
+        color: #1E90FF;  /* Dodger blue */
+        font-size: 30px;
+        font-weight: bold;
+    }
+    </style>
+""", unsafe_allow_html=True)
 
+# Streamlit app ki settings set karenge
+st.markdown('<h1 class="main-title"> 👽Text To Math Problem Solver And Data Search Assistant</h1>', unsafe_allow_html=True)
+st.markdown('<h2 class="subheader">Text To Math Problem Solver Using Google Gemma 2</h2>', unsafe_allow_html=True)
 
+# Groq API key ko environment variables se load karenge
+groq_api_key = os.getenv("GROQ_API_KEY")
+
+# Agar API key nahi mili, toh user ko message dikhayenge aur app stop karenge
 if not groq_api_key:
-    st.info("Please add your Groq APPI key to continue")
+    st.info("Please add your Groq API key in the .env file to continue")
     st.stop()
 
-llm=ChatGroq(model="Gemma2-9b-It",groq_api_key=groq_api_key)
+# ChatGroq model ko initialize karenge Groq API key ke sath
+llm = ChatGroq(model="Gemma2-9b-It", groq_api_key=groq_api_key)
 
-
-## Initializing the tools
-wikipedia_wrapper=WikipediaAPIWrapper()
-wikipedia_tool=Tool(
+# Wikipedia tool initialize karenge
+wikipedia_wrapper = WikipediaAPIWrapper()
+wikipedia_tool = Tool(
     name="Wikipedia",
-    func=wikipedia_wrapper.run,
-    description="A tool for searching the Internet to find the vatious information on the topics mentioned"
-
+    func=wikipedia_wrapper.run,  # Wikipedia tool ke liye function set karenge
+    description="A tool for searching the Internet to find various information on the topics mentioned"
 )
 
-## Initializa the MAth tool
-
-math_chain=LLMMathChain.from_llm(llm=llm)
-calculator=Tool(
+# Math tool initialize karenge
+math_chain = LLMMathChain.from_llm(llm=llm)
+calculator = Tool(
     name="Calculator",
-    func=math_chain.run,
-    description="A tools for answering math related questions. Only input mathematical expression need to bed provided"
+    func=math_chain.run,  # Math tool ke liye function set karenge
+    description="A tool for answering math-related questions. Only input mathematical expressions need to be provided"
 )
 
-prompt="""
-Your a agent tasked for solving users mathemtical question. Logically arrive at the solution and provide a detailed explanation
-and display it point wise for the question below
-Question:{question}
+# Custom prompt template banayenge reasoning questions ke liye
+prompt = """
+You are an agent tasked with solving users' mathematical questions. Logically arrive at the solution and provide a detailed explanation,
+and display it point-wise for the question below.
+Question: {question}
 Answer:
 """
 
-prompt_template=PromptTemplate(
-    input_variables=["question"],
-    template=prompt
+prompt_template = PromptTemplate(
+    input_variables=["question"],  # Prompt ke input variables define karenge
+    template=prompt  # Prompt ko template ke sath set karenge
 )
 
-## Combine all the tools into chain
-chain=LLMChain(llm=llm,prompt=prompt_template)
+# Reasoning tool ke liye chain banayenge
+chain = LLMChain(llm=llm, prompt=prompt_template)
 
-reasoning_tool=Tool(
+reasoning_tool = Tool(
     name="Reasoning tool",
-    func=chain.run,
+    func=chain.run,  # Reasoning tool ke liye function set karenge
     description="A tool for answering logic-based and reasoning questions."
 )
 
-## initialize the agents
-
-assistant_agent=initialize_agent(
-    tools=[wikipedia_tool,calculator,reasoning_tool],
+# Sabhi tools ko agent ke andar combine karenge
+assistant_agent = initialize_agent(
+    tools=[wikipedia_tool, calculator, reasoning_tool],
     llm=llm,
-    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
-    verbose=False,
-    handle_parsing_errors=True
+    agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,  # Agent type set karenge
+    verbose=False,  # Verbose logging off rakhenge
+    handle_parsing_errors=True  # Parsing errors ko handle karenge
 )
 
+# Session state initialize karenge agar messages pehle se nahi hain
 if "messages" not in st.session_state:
-    st.session_state["messages"]=[
-        {"role":"assistant","content":"Hi, I'm a MAth chatbot who can answer all your maths questions"}
+    st.session_state["messages"] = [
+        {"role": "assistant", "content": "Hi, I'm a Math chatbot who can answer all your maths questions"}
     ]
 
+# Pichle messages ko display karenge
 for msg in st.session_state.messages:
     st.chat_message(msg["role"]).write(msg['content'])
 
-## LEts start the interaction
-question=st.text_area("Enter youe question:","I have 5 bananas and 7 grapes. I eat 2 bananas and give away 3 grapes. Then I buy a dozen apples and 2 packs of blueberries. Each pack of blueberries contains 25 berries. How many total pieces of fruit do I have at the end?")
+# Interaction start karne ke liye user se question lenge
+question = st.text_area("Enter your question:", "I have 5 bananas and 7 grapes. I eat 2 bananas and give away 3 grapes. Then I buy a dozen apples and 2 packs of blueberries. Each pack of blueberries contains 25 berries. How many total pieces of fruit do I have at the end?")
 
-if st.button("find my answer"):
+# Agar user "find my answer" button press kare, toh response generate karenge
+if st.button("Find my answer"):
     if question:
-        with st.spinner("Generate response.."):
-            st.session_state.messages.append({"role":"user","content":question})
+        with st.spinner("Generating response..."):  # Spinner dikhayenge jab tak response generate ho raha hai
+            st.session_state.messages.append({"role": "user", "content": question})
             st.chat_message("user").write(question)
 
-            st_cb=StreamlitCallbackHandler(st.container(),expand_new_thoughts=False)
-            response=assistant_agent.run(st.session_state.messages,callbacks=[st_cb]
-                                         )
-            st.session_state.messages.append({'role':'assistant',"content":response})
+            # Response generate karenge agent se aur display karenge
+            st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
+            response = assistant_agent.run(st.session_state.messages, callbacks=[st_cb])
+            st.session_state.messages.append({'role': 'assistant', "content": response})
             st.write('### Response:')
             st.success(response)
 
     else:
-        st.warning("Please enter the question")
-
-
-
-
-
-
-
-
-
+        st.warning("Please enter the question")  # Agar question nahi diya gaya toh warning dikhayenge

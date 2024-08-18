@@ -16,7 +16,7 @@ load_dotenv()
 st.markdown("""
     <style>
  .main-title {
-        color: #3FFF00;  /* Bright orange-red */
+        color: #39FF14;  /* Bright orange-red */
         font-size: 40px;
         font-weight: bold;
         text-align: center;
